@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 clap = { git = "https://github.com/clap-rs/clap/" }
+flate2 = "1.0.14"
 
 [lib]
 name="git"

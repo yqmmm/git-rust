@@ -18,9 +18,20 @@ enum SubCommand {
         #[clap(name = "PATH", default_value = ".", parse(from_os_str))]
         path: PathBuf,
     },
+    CatFile(CatFile),
     /// Add file contents to the index
     #[clap(name = "add")]
     Add(Add),
+}
+
+#[derive(Clap)]
+struct CatFile {
+    #[clap(name = "SHA")]
+    sha: String,
+}
+
+fn cat_file(args: CatFile) {
+    GitRepository::read_object(&args.sha);
 }
 
 #[derive(Clap)]
@@ -31,6 +42,8 @@ fn main() {
 
     match opts.subcmd {
         SubCommand::Init { path } => GitRepository::init(path),
+        // SubCommand::CatFile { sha } => GitRepository::read_object(&sha),
+        SubCommand::CatFile(args) => cat_file(args),
         SubCommand::Add(_add) => println!("add!"),
     }
 }
