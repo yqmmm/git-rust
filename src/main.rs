@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use clap::Clap;
 
 use git::repo::GitRepository;
+use git::object;
 
 /// git implemented in rust.
 #[derive(Clap)]
@@ -19,6 +20,7 @@ enum SubCommand {
         path: PathBuf,
     },
     CatFile(CatFile),
+    HashObject(HashObject),
     /// Add file contents to the index
     #[clap(name = "add")]
     Add(Add),
@@ -35,6 +37,15 @@ fn cat_file(args: CatFile) {
 }
 
 #[derive(Clap)]
+struct HashObject {
+    #[clap(name = "OBJECT")]
+    object: String,
+}
+
+fn hash_object(args: HashObject) {
+}
+
+#[derive(Clap)]
 struct Add {}
 
 fn main() {
@@ -42,8 +53,8 @@ fn main() {
 
     match opts.subcmd {
         SubCommand::Init { path } => GitRepository::init(path),
-        // SubCommand::CatFile { sha } => GitRepository::read_object(&sha),
         SubCommand::CatFile(args) => cat_file(args),
+        SubCommand::HashObject(args) => hash_object(args),
         SubCommand::Add(_add) => println!("add!"),
     }
 }

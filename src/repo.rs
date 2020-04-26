@@ -6,6 +6,10 @@ use std::path::{Path, PathBuf};
 
 use flate2::bufread::ZlibDecoder;
 
+use crate::object::blob::GitBlob;
+
+use super::object;
+
 pub struct GitRepository {
     worktree: PathBuf,
     git_dir: PathBuf,
@@ -66,20 +70,11 @@ impl GitRepository {
         let filename = repo.repo_files(dirs);
 
         let file = File::open(filename).unwrap();
-        let file_reader = BufReader::new(file);
-        let mut zlib_reader = BufReader::new(ZlibDecoder::new(file_reader));
+        let mut file_reader = BufReader::new(file);
 
-        let mut object_type = Vec::new();
-        let mut object_size = Vec::new();
-        let mut object_content = Vec::new();
-
-        zlib_reader.read_until(0x20, &mut object_type).unwrap();
-        zlib_reader.read_until(0, &mut object_size).unwrap();
-        zlib_reader.read_to_end(&mut object_content).unwrap();
-
-        println!("Type: {}", String::from_utf8(object_type).unwrap());
-        println!("Size: {}", String::from_utf8(object_size).unwrap());
-        println!("Content: {}", String::from_utf8(object_content).unwrap());
+        let object = object::new(&mut file_reader);
+        println!("Type: {}", object.object_type());
+        println!("Size: {}", object.size());
     }
 
     fn repo_file<P: AsRef<Path>>(&self, name: P) -> PathBuf {
