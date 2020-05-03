@@ -1,8 +1,14 @@
-use std::io::{BufRead, BufReader, Read, Write, BufWriter};
+use std::fs::{create_dir_all, File};
+use std::io::{BufRead, BufReader, Read, Write};
 
-use flate2::read::{ZlibDecoder, ZlibEncoder};
+use flate2::read::ZlibDecoder;
+use flate2::write::ZlibEncoder;
 use sha1::{Digest, Sha1};
-use sha1::digest::generic_array::GenericArray;
+
+pub use blob::GitBlob;
+pub use tree::GitTree;
+
+use crate::repo::GitRepository;
 
 pub mod blob;
 pub mod tree;
@@ -10,7 +16,9 @@ pub mod tree;
 pub trait GitObject {
     fn serialize(&self) -> &[u8];
     fn object_type(&self) -> &str;
-    fn size(&self) -> u32;
+    fn size(&self) -> usize {
+        return self.serialize().len();
+    }
 }
 
 pub fn new<R: Read>(input: &mut R) -> Box<dyn GitObject> {
@@ -26,18 +34,15 @@ pub fn new<R: Read>(input: &mut R) -> Box<dyn GitObject> {
     size_vec.pop();
     zlib_reader.read_to_end(&mut content_vec).unwrap();
 
-    let size: u32 = String::from_utf8(size_vec).unwrap().parse().unwrap();
-
     Box::new(match &type_vec[..] {
-        b"blob" => blob::GitBlob {
-            size,
+        b"blob" => GitBlob {
             data: content_vec,
         },
         _ => panic!()
     })
 }
 
-pub fn hash_object<W: Write>(object: impl GitObject, write: Option<&mut W>) -> String {
+pub fn hash_object(object: &impl GitObject, write: bool) -> String {
     let data = object.serialize();
 
     let mut hasher = Sha1::new();
@@ -47,26 +52,41 @@ pub fn hash_object<W: Write>(object: impl GitObject, write: Option<&mut W>) -> S
     hasher.input("\0");
     hasher.input(data);
 
-    let result = hex::encode(&hasher.result()[..]);
+    let hash = hex::encode(&hasher.result()[..]);
 
-    if write.is_some() {
+    if write {
+        let repo = GitRepository::default();
+        let filename = repo.repo_files(&["objects", &hash.as_str()[..2], &hash.as_str()[2..]]);
+        let dir = filename.parent().unwrap();
+        if !dir.is_dir() {
+            create_dir_all(dir).unwrap();
+        }
+        let file = File::create(filename).unwrap();
+        let mut zlib_writer = ZlibEncoder::new(file, flate2::Compression::default());
+        // TODO remove this redundant code
+        zlib_writer.write(object.object_type().as_bytes()).unwrap();
+        zlib_writer.write(b" ").unwrap();
+        zlib_writer.write(data.len().to_string().as_bytes()).unwrap();
+        zlib_writer.write(b"\0").unwrap();
+        zlib_writer.write(data).unwrap();
     }
 
-    result
+    hash
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::object::blob::GitBlob;
+    use std::fs::File;
+
+    use crate::object::GitBlob;
 
     use super::*;
 
     #[test]
     fn test_write_object() {
         let obj = GitBlob {
-            size: 12,
             data: "hello world\x0a".as_bytes().to_vec(),
         };
-        assert_eq!(hash_object(obj, false), "3b18e512dba79e4c8300dd08aeb37f8e728b8dad");
+        assert_eq!(hash_object(&obj, false), "3b18e512dba79e4c8300dd08aeb37f8e728b8dad");
     }
 }

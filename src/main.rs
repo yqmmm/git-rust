@@ -1,9 +1,11 @@
+use std::fs::File;
+use std::io;
 use std::path::PathBuf;
 
 use clap::Clap;
 
-use git::repo::GitRepository;
 use git::object;
+use git::repo::GitRepository;
 
 /// git implemented in rust.
 #[derive(Clap)]
@@ -38,11 +40,37 @@ fn cat_file(args: CatFile) {
 
 #[derive(Clap)]
 struct HashObject {
-    #[clap(name = "OBJECT")]
-    object: String,
+    /// write the object into the object database
+    #[clap(short)]
+    write: bool,
+    /// read the object from stdin
+    #[clap(long)]
+    stdin: bool,
+    #[clap()]
+    file: Option<PathBuf>,
 }
 
 fn hash_object(args: HashObject) {
+    if args.stdin {
+        do_hash_object(io::stdin(), args.write);
+    }
+
+    if let Some(path) = args.file {
+        do_hash_object(File::open(path).unwrap(), args.write);
+    }
+}
+
+fn do_hash_object(mut input: impl io::Read, write: bool) {
+    let mut buf: Vec<u8> = Vec::new();
+    input.read_to_end(&mut buf).unwrap();
+
+    let obj = object::GitBlob {
+        data: buf,
+    };
+
+    let hash = object::hash_object(&obj, write);
+
+    println!("{}", hash);
 }
 
 #[derive(Clap)]

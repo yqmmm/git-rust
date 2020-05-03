@@ -1,12 +1,7 @@
 use std::fs;
 use std::fs::{create_dir_all, File};
 use std::io::BufReader;
-use std::io::prelude::*;
 use std::path::{Path, PathBuf};
-
-use flate2::bufread::ZlibDecoder;
-
-use crate::object::blob::GitBlob;
 
 use super::object;
 
@@ -81,7 +76,7 @@ impl GitRepository {
         self.git_dir.join(name)
     }
 
-    fn repo_files<P, PI>(&self, name: PI) -> PathBuf
+    pub fn repo_files<P, PI>(&self, name: PI) -> PathBuf
         where PI: IntoIterator<Item=P>,
               P: AsRef<Path>
     {
