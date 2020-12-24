@@ -24,7 +24,6 @@ impl GitObject for GitTree {
 
     fn object_type(&self) -> &str { "tree" }
 
-    // fn content(&self) -> String { self.items[0].to_string() }
     fn content(&self) -> String {
         self.items.iter()
             .map(|x| x.to_string())
