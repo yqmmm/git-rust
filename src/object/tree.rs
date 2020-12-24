@@ -1,4 +1,5 @@
 use std::io::{BufRead, BufReader, Read};
+use itertools::Itertools;
 
 use super::GitObject;
 
@@ -26,8 +27,7 @@ impl GitObject for GitTree {
 
     fn content(&self) -> String {
         self.items.iter()
-            .map(|x| x.to_string())
-            .fold(String::new(), |r, c| r + c.as_str() + "\n")
+            .join("\n")
     }
 }
 
