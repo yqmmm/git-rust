@@ -35,7 +35,19 @@ struct CatFile {
 }
 
 fn cat_file(args: CatFile) {
-    GitRepository::read_object(&args.sha);
+    let repo = GitRepository::default();
+    let object = repo.read_object(&args.sha);
+
+    match object {
+        Some(o) => {
+            println!("Type: {}", o.object_type());
+            println!("Size: {}", o.size());
+            println!("Content:\n{}", o.content());
+        }
+        None => {
+            println!("Type not supported")
+        }
+    }
 }
 
 #[derive(Clap)]

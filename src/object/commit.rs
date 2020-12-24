@@ -1,12 +1,12 @@
 use super::GitObject;
 
-pub struct GitBlob {
+pub struct GitCommit {
     pub data: Vec<u8>,
 }
 
-impl GitObject for GitBlob {
+impl GitObject for GitCommit {
     fn serialize(&self) -> &[u8] { &self.data[..] }
-    fn object_type(&self) -> &str { "blob" }
+    fn object_type(&self) -> &str { "commit" }
 
     fn size(&self) -> usize {
         unimplemented!()
@@ -15,7 +15,10 @@ impl GitObject for GitBlob {
     fn content(&self) -> String {
         match String::from_utf8(self.data.clone()) {
             Ok(s) => s,
-            Err(_e) => "".to_string(),
+            Err(err) => {
+                println!("{}", err);
+                "".to_string()
+            },
         }
     }
 }

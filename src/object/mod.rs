@@ -6,12 +6,16 @@ use flate2::write::ZlibEncoder;
 use sha1::{Digest, Sha1};
 
 pub use blob::GitBlob;
+pub use commit::GitCommit;
+pub use tag::GitTag;
 pub use tree::GitTree;
 
 use crate::repo::GitRepository;
 
 pub mod blob;
 pub mod tree;
+pub mod commit;
+pub mod tag;
 
 pub trait GitObject {
     fn serialize(&self) -> &[u8];
@@ -19,9 +23,10 @@ pub trait GitObject {
     fn size(&self) -> usize {
         return self.serialize().len();
     }
+    fn content(&self) -> String;
 }
 
-pub fn new<R: Read>(input: &mut R) -> Box<dyn GitObject> {
+pub fn new<R: Read>(input: &mut R) -> Option<Box<dyn GitObject>> {
     let mut zlib_reader = BufReader::new(ZlibDecoder::new(input));
 
     let mut type_vec = Vec::new();
@@ -34,12 +39,22 @@ pub fn new<R: Read>(input: &mut R) -> Box<dyn GitObject> {
     size_vec.pop();
     zlib_reader.read_to_end(&mut content_vec).unwrap();
 
-    Box::new(match &type_vec[..] {
-        b"blob" => GitBlob {
+    match &type_vec[..] {
+        b"blob" => Some(Box::new(GitBlob {
             data: content_vec,
-        },
-        _ => panic!()
-    })
+        })),
+        b"commit" => Some(Box::new(GitCommit {
+            data: content_vec,
+        })),
+        b"tree" => Some(Box::new(GitTree::new(content_vec))),
+        b"tag" => Some(Box::new(GitTag {
+            data: content_vec,
+        })),
+        _ => {
+            println!("{:?}", &type_vec[..]);
+            None
+        }
+    }
 }
 
 pub fn hash_object(object: &impl GitObject, write: bool) -> String {

@@ -1,12 +1,12 @@
 use super::GitObject;
 
-pub struct GitBlob {
+pub struct GitTag {
     pub data: Vec<u8>,
 }
 
-impl GitObject for GitBlob {
+impl GitObject for GitTag {
     fn serialize(&self) -> &[u8] { &self.data[..] }
-    fn object_type(&self) -> &str { "blob" }
+    fn object_type(&self) -> &str { "tag" }
 
     fn size(&self) -> usize {
         unimplemented!()

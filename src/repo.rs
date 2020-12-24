@@ -3,6 +3,8 @@ use std::fs::{create_dir_all, File};
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 
+use crate::object::GitObject;
+
 use super::object;
 
 pub struct GitRepository {
@@ -53,23 +55,18 @@ impl GitRepository {
         // TODO configuration file, maybe with rust-ini(https://github.com/zonyitoo/rust-ini)
     }
 
-    pub fn read_object(sha: &str) {
+    pub fn read_object(&self, sha: &str) -> Option<Box<dyn GitObject>> {
         if sha.len() != 40 || !sha.is_ascii() {
-            panic!("Invalid SHA-1 Value")
+            panic!("Invalid SHA-1 Value: {}", sha)
         }
 
-        let repo = GitRepository::default();
-        let mut dirs = vec!["objects"];
-        dirs.push(&sha[..2]);
-        dirs.push(&sha[2..]);
-        let filename = repo.repo_files(dirs);
+        let dirs = vec!["objects", &sha[..2], &sha[2..]];
+        let filename = self.repo_files(dirs);
 
         let file = File::open(filename).unwrap();
         let mut file_reader = BufReader::new(file);
 
-        let object = object::new(&mut file_reader);
-        println!("Type: {}", object.object_type());
-        println!("Size: {}", object.size());
+        object::new(&mut file_reader)
     }
 
     fn repo_file<P: AsRef<Path>>(&self, name: P) -> PathBuf {
