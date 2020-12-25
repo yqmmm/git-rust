@@ -69,13 +69,19 @@ impl GitRepository {
         object::new(&mut file_reader)
     }
 
+    pub fn ref_resolve(&self, ref_name: &str) -> String {
+        let filename = self.repo_file(ref_name);
+        let content = fs::read_to_string(filename).unwrap();
+        return content;
+    }
+
     fn repo_file<P: AsRef<Path>>(&self, name: P) -> PathBuf {
         self.git_dir.join(name)
     }
 
-    pub fn repo_files<P, PI>(&self, name: PI) -> PathBuf
-        where PI: IntoIterator<Item=P>,
-              P: AsRef<Path>
+    pub fn repo_files<T>(&self, name: T) -> PathBuf
+        where T: IntoIterator,
+              T::Item: AsRef<Path>
     {
         let mut file = self.git_dir.clone();
         name.into_iter().for_each(|p| file.push(p));

@@ -43,9 +43,7 @@ pub fn new<R: Read>(input: &mut R) -> Option<Box<dyn GitObject>> {
         b"blob" => Some(Box::new(GitBlob {
             data: content_vec,
         })),
-        b"commit" => Some(Box::new(GitCommit {
-            data: content_vec,
-        })),
+        b"commit" => Some(Box::new(GitCommit::new(content_vec))),
         b"tree" => Some(Box::new(GitTree::new(content_vec))),
         b"tag" => Some(Box::new(GitTag {
             data: content_vec,

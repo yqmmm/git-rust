@@ -9,7 +9,7 @@ impl GitObject for GitBlob {
     fn object_type(&self) -> &str { "blob" }
 
     fn size(&self) -> usize {
-        unimplemented!()
+        self.data.len()
     }
 
     fn content(&self) -> String {

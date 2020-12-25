@@ -11,7 +11,7 @@ pub struct GitTreeEntry {
 
 impl std::fmt::Display for GitTreeEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{} {} {}", self.mode, self.sha, self.filename)
+        write!(f, "{:06} {} {}", self.mode, self.sha, self.filename)
     }
 }
 
