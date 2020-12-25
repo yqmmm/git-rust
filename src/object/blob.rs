@@ -18,4 +18,10 @@ impl GitObject for GitBlob {
             Err(_e) => "".to_string(),
         }
     }
+
+    fn new(data: Vec<u8>) -> Self {
+        GitBlob {
+            data,
+        }
+    }
 }

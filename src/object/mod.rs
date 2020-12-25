@@ -18,6 +18,7 @@ pub mod commit;
 pub mod tag;
 
 pub trait GitObject {
+    fn new(data: Vec<u8>) -> Self where Self: Sized;
     fn serialize(&self) -> &[u8];
     fn object_type(&self) -> &str;
     fn size(&self) -> usize {

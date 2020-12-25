@@ -18,4 +18,10 @@ impl GitObject for GitTag {
             Err(_e) => "".to_string(),
         }
     }
+
+    fn new(data: Vec<u8>) -> Self {
+        GitTag {
+            data,
+        }
+    }
 }

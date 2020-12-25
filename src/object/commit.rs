@@ -25,10 +25,8 @@ impl GitObject for GitCommit {
             }
         }
     }
-}
 
-impl GitCommit {
-    pub fn new(data: Vec<u8>) -> Self {
+    fn new(data: Vec<u8>) -> Self {
         let mut cursor = Cursor::new(data);
 
         let mut tree_vec = Vec::new();

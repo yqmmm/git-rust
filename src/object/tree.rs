@@ -1,4 +1,5 @@
 use std::io::{BufRead, BufReader, Read};
+
 use itertools::Itertools;
 
 use super::GitObject;
@@ -29,10 +30,8 @@ impl GitObject for GitTree {
         self.items.iter()
             .join("\n")
     }
-}
 
-impl GitTree {
-    pub fn new(data: Vec<u8>) -> Self {
+    fn new(data: Vec<u8>) -> Self {
         let mut reader = BufReader::new(&data[..]);
         let mut items = Vec::new();
 
@@ -72,3 +71,4 @@ impl GitTree {
         };
     }
 }
+
