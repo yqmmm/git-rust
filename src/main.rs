@@ -26,6 +26,7 @@ enum SubCommand {
     /// Add file contents to the index
     #[clap(name = "add")]
     Add(Add),
+    Log(Log),
 }
 
 #[derive(Clap)]
@@ -88,6 +89,17 @@ fn do_hash_object(mut input: impl io::Read, write: bool) {
 #[derive(Clap)]
 struct Add {}
 
+#[derive(Clap)]
+struct Log {}
+
+fn log() {
+    let repo = GitRepository::default();
+    let master_sha = repo.ref_resolve("./refs/heads/master");
+
+    let mut commit = repo.read_object(&master_sha).unwrap();
+    println!("{}", commit.content())
+}
+
 fn main() {
     let opts: Git = Git::parse();
 
@@ -96,5 +108,6 @@ fn main() {
         SubCommand::CatFile(args) => cat_file(args),
         SubCommand::HashObject(args) => hash_object(args),
         SubCommand::Add(_add) => println!("add!"),
+        SubCommand::Log(_) => log(),
     }
 }

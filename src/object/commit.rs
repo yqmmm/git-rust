@@ -1,15 +1,53 @@
-use std::io::{BufReader, Read, BufRead, Cursor, Seek, SeekFrom};
+use std::collections::HashMap;
+use std::io::{BufRead, BufReader, Cursor, Read, Seek, SeekFrom};
+use std::rc::Rc;
+
+use crate::repo::GitRepository;
 
 use super::GitObject;
 
 pub struct GitCommit {
-    pub data: Vec<u8>,
-    tree: String,
-    parent: String,
+    pub data: String,
+    pub tree: String,
+    pub parents: Vec<String>,
+    pub author: String,
+    pub committer: String,
+
+    parent: Option<Rc<Box<dyn GitObject>>>, // TODO: is Box in Rc the right thing to do?
 }
 
 impl GitObject for GitCommit {
-    fn serialize(&self) -> &[u8] { &self.data[..] }
+    fn new(data: Vec<u8>, repo: &GitRepository) -> Self {
+        let data_str = String::from_utf8(data).unwrap();
+        let headers = read_commit_header(&data_str);
+
+        let mut parents = Vec::new();
+        let mut tree = String::new();
+        let mut author = String::new();
+        let mut committer = String::new();
+
+        headers.into_iter().for_each(|(k, v)| {
+            match &k[..] {
+                "tree" => tree = v,
+                "parent" => parents.push(v),
+                "author" => author = v,
+                "committer" => committer = v,
+                _ => (),
+            }
+        });
+
+        GitCommit {
+            data: data_str,
+            tree,
+            parents,
+            author,
+            committer,
+            parent: None,
+        }
+    }
+
+    fn serialize(&self) -> &[u8] { self.data.as_bytes() }
+
     fn object_type(&self) -> &str { "commit" }
 
     fn size(&self) -> usize {
@@ -17,36 +55,37 @@ impl GitObject for GitCommit {
     }
 
     fn content(&self) -> String {
-        match String::from_utf8(self.data.clone()) {
-            Ok(s) => s,
-            Err(err) => {
-                println!("{}", err);
-                "".to_string()
-            }
-        }
+        format!("commit:{}\nAuthor:{}\n", self.tree, self.committer)
     }
+}
 
-    fn new(data: Vec<u8>) -> Self {
-        let mut cursor = Cursor::new(data);
+// Commit object starts with some key-value pairs
+// Read it hear
+// TODO: Error handling
+fn read_commit_header(data: &str) -> Vec<(String, String)> {
+    let cursor = Cursor::new(data);
 
-        let mut tree_vec = Vec::new();
-        cursor.seek(SeekFrom::Start(5));
-        cursor.read_until(b'\n', &mut tree_vec);
-        tree_vec.pop();
-        let tree = String::from_utf8(tree_vec).unwrap();
-        println!("{}", tree);
+    let mut kv = Vec::new();
+    cursor.lines()
+        .filter_map(|result| result.ok())
+        .take_while(|line| !line.is_empty())
+        .for_each(|line| {
+            let mut split = line.splitn(2, " ");
+            kv.push((split.next().unwrap().to_string(), split.next().unwrap().to_string()));
+        });
+    kv
+}
 
-        let mut parent_vec = Vec::new();
-        cursor.seek(SeekFrom::Current(7));
-        cursor.read_until(b'\n', &mut parent_vec);
-        parent_vec.pop();
-        let parent = String::from_utf8(parent_vec).unwrap();
-        println!("{}", parent);
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-        GitCommit {
-            data: cursor.into_inner(),
-            tree,
-            parent,
-        }
+    #[test]
+    fn test_read_into_kv() {
+        let data = "tree parent1\ntree parent2\ncommitter me\n\nI'm the commit message";
+
+        let kv = read_commit_header(data);
+
+        assert_eq!(kv.len(), 3);
     }
 }

@@ -3,6 +3,7 @@ use std::io::{BufRead, BufReader, Read};
 use itertools::Itertools;
 
 use super::GitObject;
+use crate::repo::GitRepository;
 
 pub struct GitTreeEntry {
     mode: u32,
@@ -31,7 +32,7 @@ impl GitObject for GitTree {
             .join("\n")
     }
 
-    fn new(data: Vec<u8>) -> Self {
+    fn new(data: Vec<u8>, repo: &GitRepository) -> Self {
         let mut reader = BufReader::new(&data[..]);
         let mut items = Vec::new();
 

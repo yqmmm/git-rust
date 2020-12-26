@@ -18,42 +18,13 @@ pub mod commit;
 pub mod tag;
 
 pub trait GitObject {
-    fn new(data: Vec<u8>) -> Self where Self: Sized;
+    fn new(data: Vec<u8>, repo: &GitRepository) -> Self where Self: Sized;
     fn serialize(&self) -> &[u8];
     fn object_type(&self) -> &str;
     fn size(&self) -> usize {
         return self.serialize().len();
     }
     fn content(&self) -> String;
-}
-
-pub fn new<R: Read>(input: &mut R) -> Option<Box<dyn GitObject>> {
-    let mut zlib_reader = BufReader::new(ZlibDecoder::new(input));
-
-    let mut type_vec = Vec::new();
-    let mut size_vec = Vec::new();
-    let mut content_vec = Vec::new();
-
-    zlib_reader.read_until(0x20, &mut type_vec).unwrap();
-    type_vec.pop();
-    zlib_reader.read_until(0, &mut size_vec).unwrap();
-    size_vec.pop();
-    zlib_reader.read_to_end(&mut content_vec).unwrap();
-
-    match &type_vec[..] {
-        b"blob" => Some(Box::new(GitBlob {
-            data: content_vec,
-        })),
-        b"commit" => Some(Box::new(GitCommit::new(content_vec))),
-        b"tree" => Some(Box::new(GitTree::new(content_vec))),
-        b"tag" => Some(Box::new(GitTag {
-            data: content_vec,
-        })),
-        _ => {
-            println!("{:?}", &type_vec[..]);
-            None
-        }
-    }
 }
 
 pub fn hash_object(object: &impl GitObject, write: bool) -> String {
